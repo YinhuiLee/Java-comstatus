@@ -39,7 +39,7 @@ public class SingleThreadScheduler {
 			frame.label.setText(msg); // 更新UI
 			try {
 				// 休眠3s
-				Thread.sleep(3000);
+				Thread.sleep(10000);
 				msg = "T" + i + ": " + df.format(new Date());
 				System.out.println(msg);
 				frame.label.setText(msg);// 更新UI
