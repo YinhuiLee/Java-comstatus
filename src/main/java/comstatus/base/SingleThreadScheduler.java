@@ -38,15 +38,15 @@ public class SingleThreadScheduler {
 			System.out.println(msg);
 			frame.label.setText(msg); // 更新UI
 			try {
-				// 休眠3s
-				Thread.sleep(10000);
+				// 休眠1s
+				Thread.sleep(1000);
 				msg = "T" + i + ": " + df.format(new Date());
 				System.out.println(msg);
 				frame.label.setText(msg);// 更新UI
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}, 2, 5, TimeUnit.SECONDS);
+		}, 2, 5, TimeUnit.SECONDS);//定时器（启动后2秒开始干活，一个周期5秒，如果代码执行时间大于5秒就是代码执行时间）
 	}
 }
 
