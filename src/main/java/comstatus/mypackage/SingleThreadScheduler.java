@@ -3,6 +3,8 @@ package comstatus.mypackage;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -338,7 +340,7 @@ public class SingleThreadScheduler {
  * Swing UI
  *
  */
-class ComStatusFrame extends JFrame implements ActionListener {
+class ComStatusFrame extends JFrame {
 	private JPanel nJPan;
 	private JPanel wJPan;
 	private ChartPanel cJPan;
@@ -354,7 +356,10 @@ class ComStatusFrame extends JFrame implements ActionListener {
 	private DefaultCategoryDataset cpuDataset = new DefaultCategoryDataset();// CPU数据
 	private DefaultCategoryDataset memDataset = new DefaultCategoryDataset();// MEM数据
 	private List<DiskUsage> disks = new ArrayList<DiskUsage>();// 磁盘数据
-	private Comparable<?> previousSection = "C:";// 饼图标记
+	private Comparable<?> previousSection = "";// 饼图标记
+	private JFreeChart CPU;// CPU曲线
+	private JFreeChart MEM;// MEM曲线
+	private String symbol = "";// 标志
 
 	/**
 	 * 
@@ -489,6 +494,7 @@ class ComStatusFrame extends JFrame implements ActionListener {
 		CPUTxtPan.add(CPUUseLabel, "40%");
 		CPUPan.add(CPUTxtPan, "40%");
 		wJPan.add(CPUPan, "20%");
+		CPU = chart;
 
 		// 小内存曲线
 		// 曲线名称
@@ -558,34 +564,36 @@ class ComStatusFrame extends JFrame implements ActionListener {
 		MEMPan.add(MEMTxtPan, "40%");
 		wJPan.add(MEMPan, "20%");
 
+		MEM = MEMChart;
+
 		// 小磁盘图
 		// 定义图表对象
 		JFreeChart diskChart = ChartFactory.createPieChart("", diskDataset, false, true, false);
 		PiePlot pie = (PiePlot) diskChart.getPlot();
 
 		pie.setNoDataMessage("还未获取数据，请稍等！");
-		
+
 		// 设置PieChart是否显示为圆形
 		pie.setCircular(true);
 		// 间距
 		pie.setLabelGap(0.01D);
-		
-		//取消标签
-		pie.setLabelGenerator(null);//取消图中标签
+
+		// 取消标签
+		pie.setLabelGenerator(null);// 取消图中标签
 
 		// 设置总的背景颜色
 		chart.setBackgroundPaint(ChartColor.WHITE);
 
 		// 设置图的背景颜色
 		pie.setBackgroundPaint(ChartColor.WHITE);
-		
+
 		// 设置饼图边框
 		pie.setOutlinePaint(Color.GREEN); // 设置绘图面板外边的填充颜色
 
 		ChartPanel diskChartPan = new ChartPanel(diskChart);
-		DiskPan.add(diskChartPan,"60%");
-		
-		//磁盘文字
+		DiskPan.add(diskChartPan, "60%");
+
+		// 磁盘文字
 		JPanel DiskTxtPan = new JPanel();
 		DiskTxtPan.setLayout(new AfYLayout(8));
 		DiskTxtPan.setBackground(Color.WHITE);
@@ -601,18 +609,146 @@ class ComStatusFrame extends JFrame implements ActionListener {
 		DiskPan.add(DiskTxtPan, "40%");
 		DiskPan.validate();// 刷新
 		wJPan.add(DiskPan, "20%");
-		
+
 		this.add(wJPan, BorderLayout.WEST);
 		wJPan.setPreferredSize(new DimensionUIResource(300, 0));
-		
-		//鼠标事件
-		CPUPan.addMouseListener(new MouseAdapter() {
+
+		// 鼠标事件
+		CPUChart.addMouseListener(new MouseAdapter() {
 			@Override
-			public void mouseMoved(MouseEvent e) {
-				//CPUPan.setBorder(border);
+			public void mouseEntered(MouseEvent e) {
+				CPUPan.setBorder(BorderFactory.createLineBorder(new Color(33, 119, 184)));
+				CPUTxtPan.setBackground(new Color(229, 243, 251));
+				CPUPan.setBackground(new Color(229, 243, 251));
+			}
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				CPUChart();
+				symbol = "CPU";
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				CPUPan.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+				CPUTxtPan.setBackground(Color.WHITE);
+				CPUPan.setBackground(Color.WHITE);
+			}
+		});
+		CPUTxtPan.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				CPUPan.setBorder(BorderFactory.createLineBorder(new Color(33, 119, 184)));
+				CPUTxtPan.setBackground(new Color(229, 243, 251));
+				CPUPan.setBackground(new Color(229, 243, 251));
+			}
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				CPUChart();
+				symbol = "CPU";
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				CPUPan.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+				CPUTxtPan.setBackground(Color.WHITE);
+				CPUPan.setBackground(Color.WHITE);
 			}
 		});
 
+		memChart.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				MEMPan.setBorder(BorderFactory.createLineBorder(new Color(33, 119, 184)));
+				MEMTxtPan.setBackground(new Color(229, 243, 251));
+				MEMPan.setBackground(new Color(229, 243, 251));
+			}
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				MEMChart();
+				symbol = "MEM";
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				MEMPan.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+				MEMTxtPan.setBackground(Color.WHITE);
+				MEMPan.setBackground(Color.WHITE);
+			}
+		});
+		MEMTxtPan.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				MEMPan.setBorder(BorderFactory.createLineBorder(new Color(33, 119, 184)));
+				MEMTxtPan.setBackground(new Color(229, 243, 251));
+				MEMPan.setBackground(new Color(229, 243, 251));
+			}
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				MEMChart();
+				symbol = "MEM";
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				MEMPan.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+				MEMTxtPan.setBackground(Color.WHITE);
+				MEMPan.setBackground(Color.WHITE);
+			}
+		});
+		diskChartPan.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				DiskPan.setBorder(BorderFactory.createLineBorder(new Color(33, 119, 184)));
+				DiskTxtPan.setBackground(new Color(229, 243, 251));
+				DiskPan.setBackground(new Color(229, 243, 251));
+			}
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				DiskChart();
+				symbol = "磁盘";
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				DiskPan.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+				DiskTxtPan.setBackground(Color.WHITE);
+				DiskPan.setBackground(Color.WHITE);
+			}
+		});
+		DiskTxtPan.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				DiskPan.setBorder(BorderFactory.createLineBorder(new Color(33, 119, 184)));
+				DiskTxtPan.setBackground(new Color(229, 243, 251));
+				DiskPan.setBackground(new Color(229, 243, 251));
+			}
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				DiskChart();
+				symbol = "磁盘";
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				DiskPan.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+				DiskTxtPan.setBackground(Color.WHITE);
+				DiskPan.setBackground(Color.WHITE);
+			}
+		});
+
+		JPanel grayJPan = new JPanel();
+		grayJPan.setBackground(new Color(240, 240, 240));
+		JPanel whiteJPan = new JPanel();
+		whiteJPan.setBackground(Color.WHITE);
+
+		wJPan.add(whiteJPan, "10%");
+		wJPan.add(grayJPan, "30%");
 		this.setVisible(true);
 
 		// 开新线程拿数据
@@ -662,41 +798,12 @@ class ComStatusFrame extends JFrame implements ActionListener {
 								/ sts.getSystemResource().getMemUsage().getTotalMemorySize() * 100)
 						+ "%<br/></html>";
 				MEMUseLabel.setText(txt);
-				//磁盘
-				String diskTxt = "<html>总空间  " + df.format(total) + " GB<br/>可用空间 "
-						+ df.format(free)
+				// 磁盘
+				String diskTxt = "<html>总空间  " + df.format(total) + " GB<br/>可用空间 " + df.format(free)
 						+ " GB<br/></html>";
 				DiskUseLabel.setText(diskTxt);
 			}
 		}, 1, 2, TimeUnit.SECONDS);
-	}
-
-	/**
-	 * 
-	 * Button时间处理
-	 */
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		command = e.getActionCommand();
-
-		if (command.equals("CPU")) {// CPU资源监控
-			int result = JOptionPane.showConfirmDialog(null, "是否要切换到CPU资源监控？", "请确认切换", JOptionPane.YES_NO_OPTION);
-			if (result == JOptionPane.OK_OPTION) {
-				CPUChart();
-			}
-		}
-		if (command.equals("物理内存")) {// 物理内存资源监控
-			int result = JOptionPane.showConfirmDialog(null, "是否要切换到物理内存资源监控？", "请确认切换", JOptionPane.YES_NO_OPTION);
-			if (result == JOptionPane.OK_OPTION) {
-				MEMChart();
-			}
-		}
-		if (command.equals("磁盘")) {// 磁盘资源监控
-			int result = JOptionPane.showConfirmDialog(null, "是否要切换到物理内存资源监控？", "请确认切换", JOptionPane.YES_NO_OPTION);
-			if (result == JOptionPane.OK_OPTION) {
-				DiskChart();
-			}
-		}
 	}
 
 	/**
@@ -706,88 +813,133 @@ class ComStatusFrame extends JFrame implements ActionListener {
 	 * @return
 	 */
 	private void CPUChart() {
-		int i = 0;
-		// 曲线名称
-		String series = "CPU";
-		// 数据
-		LimitQueue<SystemResource> sysRes = sts.getSystemResources();
-		System.out.println(sysRes.size());
-		for (SystemResource s : sysRes.getQueue()) {
-			cpuDataset.addValue(s.getCpuUsage().getcSysRate() + s.getCpuUsage().getUserRate(), series,
-					String.valueOf(sts.getTime() - sysRes.size() + i));
-			i++;
-		}
-		// 定义图表对象
-		JFreeChart chart = ChartFactory.createLineChart("", // 折线图名称
-				"", // 横坐标名称
-				"", // 纵坐标名称
-				cpuDataset, // 数据
-				PlotOrientation.VERTICAL, // 水平显示图像
-				false, // include legend
-				false, // tooltips
-				false // urls
-		);
-		CategoryPlot plot = chart.getCategoryPlot();
-		LineAndShapeRenderer renderer = (LineAndShapeRenderer) plot.getRenderer();
-		plot.setRangeGridlinesVisible(true); // 是否显示格子线
-		plot.setBackgroundAlpha(0.5f); // 设置背景透明度
-		renderer.setBaseLinesVisible(true); // series 点（即数据点）间有连线可见
-		NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
-		rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-		rangeAxis.setAutoRangeIncludesZero(true);
-		// 设置y轴范围
-		rangeAxis.setRange(0, 100);
-		plot.setRangeAxis(rangeAxis);
-		rangeAxis.setVisible(false);// 坐标轴不可见
+		this.remove(cenPan);
+		cenPan = new JPanel();
+		cenPan.setBackground(Color.WHITE);
+		Border padding = BorderFactory.createEmptyBorder(0, 8, 0, 0);
+		Border border = BorderFactory.createMatteBorder(2, 2, 0, 0, new Color(189, 174, 173));
+		border = BorderFactory.createCompoundBorder(padding, border);
+		cenPan.setBorder(border);
 
-		rangeAxis.setUpperMargin(0.20);// 上边距
+		Border smallPadding = BorderFactory.createEmptyBorder(0, 16, 0, 16);
 
-		Font font = new Font("微软雅黑", Font.BOLD, 18);
-		chart.getTitle().setFont(font);
-		rangeAxis.setLabelFont(font);
-		rangeAxis.setTickLabelPaint(new ChartColor(92, 179, 204));
+		// 设置大容器背景
+		cenPan.setBackground(Color.WHITE);
+		cenPan.setLayout(new AfYLayout(0));
 
-		CategoryAxis domainAxis = plot.getDomainAxis();
-		domainAxis.setLabelFont(font);
-		domainAxis.setVisible(false);
+		JLabel CPULabel = new JLabel("CPU");
+		CPULabel.setFont(new Font("TIMES NEW ROMAN", Font.BOLD, 30));
+		CPULabel.setBorder(smallPadding);
+		cenPan.add(CPULabel, "20%");
 
-		// 设置总的背景颜色
-		chart.setBackgroundPaint(ChartColor.WHITE);
-		// 设置标题颜色
-		chart.getTitle().setPaint(new ChartColor(92, 179, 204));
+		JPanel usePan = new JPanel();
+		usePan.setLayout(new AfXLayout(8));
+		usePan.setBackground(Color.WHITE);
+		usePan.setBorder(smallPadding);
+		Font small = new Font("微软雅黑", Font.PLAIN, 15);
+		JLabel useLabel = new JLabel("% 利用率", SwingConstants.LEFT);
+		useLabel.setForeground(Color.gray);
+		useLabel.setFont(small);
+		JLabel highLabel = new JLabel("100%", SwingConstants.RIGHT);
+		highLabel.setForeground(Color.gray);
+		highLabel.setFont(small);
+		usePan.add(useLabel, "50%");
+		usePan.add(highLabel, "50%");
+		cenPan.add(usePan, "3%");
 
-		// 设置图的背景颜色
-		plot.setBackgroundPaint(ChartColor.WHITE);
-		// 设置表格线颜色
-		plot.setRangeGridlinePaint(new ChartColor(92, 179, 204));
+		ChartPanel CPUChart = new ChartPanel(CPU);
+		cenPan.add(CPUChart, "40%");
 
-		// 改变线条粗细
-		renderer.setSeriesStroke(0, new BasicStroke(2.0F));
-		// 改变线条颜色
-		renderer.setSeriesPaint(0, new Color(36, 134, 185));
+		JPanel timePan = new JPanel();
+		timePan.setLayout(new AfXLayout(8));
+		timePan.setBackground(Color.WHITE);
+		timePan.setBorder(smallPadding);
+		JLabel endLabel = new JLabel("20秒", SwingConstants.LEFT);
+		endLabel.setForeground(Color.gray);
+		endLabel.setFont(small);
+		JLabel startLabel = new JLabel("0", SwingConstants.RIGHT);
+		startLabel.setForeground(Color.gray);
+		startLabel.setFont(small);
+		timePan.add(endLabel, "50%");
+		timePan.add(startLabel, "50%");
+		cenPan.add(timePan, "3%");
 
-		if (this.haveCJPan) {
-			this.remove(cJPan);
-		}
-		cJPan = new ChartPanel(chart);
-		this.add(cJPan, "Center");
-		this.validate();// 刷新
-		this.haveCJPan = true;
+		JPanel messageUp = new JPanel();
+		messageUp.setLayout(new AfXLayout(0));
+		messageUp.setBackground(Color.WHITE);
+		messageUp.setBorder(smallPadding);
+		cenPan.add(messageUp, "17%");
 
+		Font smallFont = new Font("微软雅黑", Font.PLAIN, 20);
+		Font bigFont = new Font("TIME NEW ROMAN", Font.BOLD, 40);
+
+		JPanel CPUSys = new JPanel();
+		CPUSys.setLayout(new AfYLayout(20));
+		CPUSys.setBackground(Color.WHITE);
+		messageUp.add(CPUSys, "50%");
+		JLabel sysUp = new JLabel("系统使用率");
+		sysUp.setFont(smallFont);
+		sysUp.setForeground(Color.gray);
+		CPUSys.add(sysUp, "20%");
+		JLabel sysDown = new JLabel("");
+		sysDown.setFont(bigFont);
+		CPUSys.add(sysDown, "80%");
+
+		JPanel CPUUser = new JPanel();
+		CPUUser.setLayout(new AfYLayout(20));
+		CPUUser.setBackground(Color.WHITE);
+		messageUp.add(CPUUser, "50%");
+		JLabel userUp = new JLabel("用户使用率");
+		userUp.setFont(smallFont);
+		userUp.setForeground(Color.gray);
+		CPUUser.add(userUp, "20%");
+		JLabel userDown = new JLabel("");
+		userDown.setFont(bigFont);
+		CPUUser.add(userDown, "80%");
+
+		JPanel messageDown = new JPanel();
+		messageDown.setLayout(new AfXLayout(0));
+		messageDown.setBackground(Color.WHITE);
+		messageDown.setBorder(smallPadding);
+		cenPan.add(messageDown, "17%");
+		JPanel CPUFree = new JPanel();
+		CPUFree.setLayout(new AfYLayout(20));
+		CPUFree.setBackground(Color.WHITE);
+		messageDown.add(CPUFree, "50%");
+		JLabel freeUp = new JLabel("CPU空闲率");
+		freeUp.setFont(smallFont);
+		freeUp.setForeground(Color.gray);
+		CPUFree.add(freeUp, "20%");
+		JLabel freeDown = new JLabel("");
+		freeDown.setFont(bigFont);
+		CPUFree.add(freeDown, "80%");
+
+		JPanel CPUCore = new JPanel();
+		CPUCore.setLayout(new AfYLayout(20));
+		CPUCore.setBackground(Color.WHITE);
+		messageDown.add(CPUCore, "50%");
+		JLabel coreUp = new JLabel("CPU核数");
+		coreUp.setFont(smallFont);
+		coreUp.setForeground(Color.gray);
+		CPUCore.add(coreUp, "20%");
+		JLabel coreDown = new JLabel("");
+		coreDown.setFont(bigFont);
+		CPUCore.add(coreDown, "80%");
+
+		this.add(cenPan, "Center");
+
+		DecimalFormat df = new DecimalFormat("#.0");
+		// 更改文本框内容
 		Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
-			if (!command.equals("CPU")) {
-				System.out.println("CPU资源监控停止！");
-				int er = 1 / 0;// 人为发生异常
+			if (!symbol.equals("CPU")) {
+				int er = 1 / 0;
 			}
-			cpuDataset.clear();
-			int x = 0;
-			for (SystemResource s : sysRes.getQueue()) {
-				cpuDataset.addValue(s.getCpuUsage().getcSysRate() + s.getCpuUsage().getUserRate(), series,
-						String.valueOf(sts.getTime() - sysRes.size() + x));
-				x++;
-			}
-			plot.setDataset(cpuDataset);
-		}, 2, 5, TimeUnit.SECONDS);
+			sysDown.setText(df.format(sts.getSystemResource().getCpuUsage().getcSysRate()) + "%");
+			userDown.setText(df.format(sts.getSystemResource().getCpuUsage().getUserRate()) + "%");
+			freeDown.setText(df.format(100 - sts.getSystemResource().getCpuUsage().getcSysRate()
+					- sts.getSystemResource().getCpuUsage().getUserRate()) + "%");
+			coreDown.setText(new Integer(sts.getSystemResource().getCpuUsage().getCoreNumber()).toString());
+		}, 1, 2, TimeUnit.SECONDS);
 	}
 
 	/**
@@ -795,67 +947,137 @@ class ComStatusFrame extends JFrame implements ActionListener {
 	 * 内存资源使用图
 	 */
 	private void MEMChart() {
-		int i = 0;
-		DefaultCategoryDataset linedataset = new DefaultCategoryDataset();
-		// 曲线名称
-		String series = "MEM";
-		// 数据
-		LimitQueue<SystemResource> sysRes = sts.getSystemResources();
-		System.out.println(sysRes.size());
-		for (SystemResource s : sysRes.getQueue()) {
-			linedataset.addValue(s.getMemUsage().getUsedMemory(), series,
-					String.valueOf(sts.getTime() - sysRes.size() + i));
-			i++;
-		}
-		// 定义图表对象
-		JFreeChart chart = ChartFactory.createLineChart("物理内存资源监控", // 折线图名称
-				"时间", // 横坐标名称
-				"物理内存使用量(G)", // 纵坐标名称
-				linedataset, // 数据
-				PlotOrientation.VERTICAL, // 水平显示图像
-				true, // include legend
-				true, // tooltips
-				false // urls
-		);
-		CategoryPlot plot = chart.getCategoryPlot();
-		LineAndShapeRenderer renderer = (LineAndShapeRenderer) plot.getRenderer();
-		plot.setRangeGridlinesVisible(true); // 是否显示格子线
-		plot.setBackgroundAlpha(0.3f); // 设置背景透明度
-		renderer.setBaseLinesVisible(true); // series 点（即数据点）间有连线可见
-		NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
-		rangeAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits());
-		rangeAxis.setAutoRangeIncludesZero(true);
-		rangeAxis.setUpperMargin(0.20);
-		rangeAxis.setLabelAngle(Math.PI / 2.0);
+		this.remove(cenPan);
+		cenPan = new JPanel();
+		cenPan.setBackground(Color.WHITE);
+		Border padding = BorderFactory.createEmptyBorder(0, 8, 0, 0);
+		Border border = BorderFactory.createMatteBorder(2, 2, 0, 0, new Color(189, 174, 173));
+		border = BorderFactory.createCompoundBorder(padding, border);
+		cenPan.setBorder(border);
 
-		Font font = new Font("微软雅黑", Font.BOLD, 18);
-		chart.getTitle().setFont(font);
-		rangeAxis.setLabelFont(font);
-		CategoryAxis domainAxis = plot.getDomainAxis();
-		domainAxis.setLabelFont(font);
+		Border smallPadding = BorderFactory.createEmptyBorder(0, 16, 0, 16);
 
-		if (this.haveCJPan) {// 检查是否已经有JFreeChart
-			this.remove(cJPan);
-		}
-		cJPan = new ChartPanel(chart);
-		this.add(cJPan, "Center");
-		this.validate();// 刷新
-		this.haveCJPan = true;
+		// 设置大容器背景
+		cenPan.setBackground(Color.WHITE);
+		cenPan.setLayout(new AfYLayout(0));
 
+		JLabel MEMLabel = new JLabel("内存");
+		MEMLabel.setFont(new Font("微软雅黑", Font.BOLD, 30));
+		MEMLabel.setBorder(smallPadding);
+		cenPan.add(MEMLabel, "20%");
+
+		JPanel usePan = new JPanel();
+		usePan.setLayout(new AfXLayout(8));
+		usePan.setBackground(Color.WHITE);
+		usePan.setBorder(smallPadding);
+		Font small = new Font("微软雅黑", Font.PLAIN, 15);
+		JLabel useLabel = new JLabel("内存使用量", SwingConstants.LEFT);
+		useLabel.setForeground(Color.gray);
+		useLabel.setFont(small);
+		JLabel highLabel = new JLabel("15.9 GB", SwingConstants.RIGHT);
+		highLabel.setForeground(Color.gray);
+		highLabel.setFont(small);
+		usePan.add(useLabel, "50%");
+		usePan.add(highLabel, "50%");
+		cenPan.add(usePan, "3%");
+
+		ChartPanel MEMChart = new ChartPanel(MEM);
+		cenPan.add(MEMChart, "40%");
+
+		JPanel timePan = new JPanel();
+		timePan.setLayout(new AfXLayout(8));
+		timePan.setBackground(Color.WHITE);
+		timePan.setBorder(smallPadding);
+		JLabel endLabel = new JLabel("20秒", SwingConstants.LEFT);
+		endLabel.setForeground(Color.gray);
+		endLabel.setFont(small);
+		JLabel startLabel = new JLabel("0", SwingConstants.RIGHT);
+		startLabel.setForeground(Color.gray);
+		startLabel.setFont(small);
+		timePan.add(endLabel, "50%");
+		timePan.add(startLabel, "50%");
+		cenPan.add(timePan, "3%");
+
+		JPanel messageUp = new JPanel();
+		messageUp.setLayout(new AfXLayout(0));
+		messageUp.setBackground(Color.WHITE);
+		messageUp.setBorder(smallPadding);
+		cenPan.add(messageUp, "17%");
+
+		Font smallFont = new Font("微软雅黑", Font.PLAIN, 20);
+		Font bigFont = new Font("TIME NEW ROMAN", Font.BOLD, 40);
+
+		JPanel CPUSys = new JPanel();
+		CPUSys.setLayout(new AfYLayout(20));
+		CPUSys.setBackground(Color.WHITE);
+		messageUp.add(CPUSys, "50%");
+		JLabel sysUp = new JLabel("物理内存总量");
+		sysUp.setFont(smallFont);
+		sysUp.setForeground(Color.gray);
+		CPUSys.add(sysUp, "20%");
+		JLabel sysDown = new JLabel("");
+		sysDown.setFont(bigFont);
+		CPUSys.add(sysDown, "80%");
+
+		JPanel CPUUser = new JPanel();
+		CPUUser.setLayout(new AfYLayout(20));
+		CPUUser.setBackground(Color.WHITE);
+		messageUp.add(CPUUser, "50%");
+		JLabel userUp = new JLabel("已使用内存");
+		userUp.setFont(smallFont);
+		userUp.setForeground(Color.gray);
+		CPUUser.add(userUp, "20%");
+		JLabel userDown = new JLabel("");
+		userDown.setFont(bigFont);
+		CPUUser.add(userDown, "80%");
+
+		JPanel messageDown = new JPanel();
+		messageDown.setLayout(new AfXLayout(0));
+		messageDown.setBackground(Color.WHITE);
+		messageDown.setBorder(smallPadding);
+		cenPan.add(messageDown, "17%");
+		JPanel CPUFree = new JPanel();
+		CPUFree.setLayout(new AfYLayout(20));
+		CPUFree.setBackground(Color.WHITE);
+		messageDown.add(CPUFree, "50%");
+		JLabel freeUp = new JLabel("剩余内存");
+		freeUp.setFont(smallFont);
+		freeUp.setForeground(Color.gray);
+		CPUFree.add(freeUp, "20%");
+		JLabel freeDown = new JLabel("");
+		freeDown.setFont(bigFont);
+		CPUFree.add(freeDown, "80%");
+
+		JPanel CPUCore = new JPanel();
+		CPUCore.setLayout(new AfYLayout(20));
+		CPUCore.setBackground(Color.WHITE);
+		messageDown.add(CPUCore, "50%");
+		JLabel coreUp = new JLabel("内存使用率");
+		coreUp.setFont(smallFont);
+		coreUp.setForeground(Color.gray);
+		CPUCore.add(coreUp, "20%");
+		JLabel coreDown = new JLabel("");
+		coreDown.setFont(bigFont);
+		CPUCore.add(coreDown, "80%");
+
+		this.add(cenPan, "Center");
+
+		DecimalFormat df = new DecimalFormat("#.0");
+		// 更改文本框内容
 		Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
-			if (!command.equals("物理内存")) {
-				System.out.println("物理内存资源监控停止！");
-				int er = 1 / 0;// 人为发生异常
+			if (!symbol.equals("MEM")) {
+				int er = 1 / 0;
 			}
-			linedataset.clear();
-			int x = 0;
-			for (SystemResource s : sysRes.getQueue()) {
-				linedataset.addValue(s.getMemUsage().getUsedMemory(), series,
-						String.valueOf(sts.getTime() - sysRes.size() + x));
-				x++;
+			if (sts.getSystemResource() != null) {
+				//highLabel.setText(df.format(sts.getSystemResource().getMemUsage().getTotalMemorySize() + " GB"));
+				sysDown.setText(df.format(sts.getSystemResource().getMemUsage().getTotalMemorySize()) + " GB");
+				userDown.setText(df.format(sts.getSystemResource().getMemUsage().getUsedMemory()) + " GB");
+				freeDown.setText(df.format(sts.getSystemResource().getMemUsage().getTotalMemorySize()
+						- sts.getSystemResource().getMemUsage().getUsedMemory()) + " GB");
+				coreDown.setText(df.format(sts.getSystemResource().getMemUsage().getUsedMemory()
+						/ sts.getSystemResource().getMemUsage().getTotalMemorySize() * 100) + "%");
 			}
-			plot.setDataset(linedataset);
-		}, 2, 5, TimeUnit.SECONDS);
+		}, 1, 2, TimeUnit.SECONDS);
 	}
 
 	/**
@@ -863,7 +1085,7 @@ class ComStatusFrame extends JFrame implements ActionListener {
 	 * 磁盘资源使用图
 	 */
 	private void DiskChart() {
-
+		this.remove(cenPan);
 		// 定义图表对象
 		JFreeChart chart = ChartFactory.createPieChart("", diskDataset, false, true, false);
 		// 三个部分设置字体的方法分别如下:
@@ -886,12 +1108,12 @@ class ComStatusFrame extends JFrame implements ActionListener {
 
 		// 设置图的背景颜色
 		pie.setBackgroundPaint(ChartColor.WHITE);
-		
-		pie.setLabelBackgroundPaint(null);//标签背景颜色
 
-		pie.setLabelOutlinePaint(null);//标签边框颜色
+		pie.setLabelBackgroundPaint(null);// 标签背景颜色
 
-		pie.setLabelShadowPaint(null);//标签阴影颜色
+		pie.setLabelOutlinePaint(null);// 标签边框颜色
+
+		pie.setLabelShadowPaint(null);// 标签阴影颜色
 
 		this.remove(cenPan);
 		cenPan = new JPanel();
